@@ -34,7 +34,7 @@ export default function Home() {
       createOn: baru.createOn || detail.createOn,
     }
     try {
-      await axios.put(`http://localhost:3001/api/${detail.id}`, {...data});
+      await axios.put(`https://smiling-teal-duck.cyclic.app/api/${detail.id}`, {...data});
       setMessage("Berhasil Mengubah Data");
     } catch (error) {
       setError("Gagal Mengubah Data");
@@ -55,7 +55,7 @@ export default function Home() {
       createOn: baru.createOn ,
     }
     try {
-      await axios.post(`http://localhost:3001/api`, {...data});
+      await axios.post(`https://smiling-teal-duck.cyclic.app/api`, {...data});
       setMessage("Berhasil Menambah Data");
     } catch (error) {
       setError("Gagal Menambah Data");
@@ -67,8 +67,8 @@ export default function Home() {
   }
   const handleDelete = async(id) => {
     try {
-      await axios.delete(`http://localhost:3001/api/${id}`);
-      const response = await axios.get('http://localhost:3001/api');
+      await axios.delete(`https://smiling-teal-duck.cyclic.app/api/${id}`);
+      const response = await axios.get('https://smiling-teal-duck.cyclic.app/api');
         const { data } = await response.data
         setData(data);
       setMessage("Berhasil Mengahapus Data");
@@ -84,7 +84,7 @@ export default function Home() {
   useEffect(() => {
     const fetchProvinceData = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/api');
+        const response = await axios.get('https://smiling-teal-duck.cyclic.app/api');
         const { data } = await response.data
         setData(data);
       } catch (error) {
