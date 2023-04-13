@@ -1,124 +1,314 @@
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
-
-const inter = Inter({ subsets: ['latin'] })
-
+import { Table, Box,  Modal, Button, Title,Input, Notification, Card, Text,Group,Badge } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { useEffect, useState } from "react";
+import { IconCheck, IconX } from '@tabler/icons-react';
+import axios from 'axios'
 export default function Home() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">pages/index.js</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+  const [data, setData] = useState([])
+  const [message, setMessage] = useState(null)
+  const [opened, { open, close }] = useDisclosure(false);
+  const [detail, setDetail] = useState(null)
+  const [title, setTitle] = useState(null)
+  const [baru, setBaru] = useState(null)
+  const [error, setError] = useState(null)
+  const handleDetail = (detail) => {
+    setTitle("Detail Data")
+    setDetail(detail)
+  }
+  const handleUpdate = (item) => {
+    setTitle("Update Data")
+    setDetail(item)
+  }
+  const handleadd = (item) => {
+    setTitle("Tambah Data")
+    setDetail(item)
+  }
+  const updat = async () => {
+    const data = {
+      productName: baru.productName || detail.productName,
+      amount: baru.amount || detail.amount,
+      customerName: baru.customerName || detail.customerName,
+      status: baru.product_status == "SUCCESS" ? 1 : 0 || detail.status,
+      transactionDate: baru.transactionDate || detail.transactionDate,
+      createBy: baru.createBy || detail.createBy,
+      createOn: baru.createOn || detail.createOn,
+    }
+    try {
+      await axios.put(`http://localhost:3001/api/${detail.id}`, {...data});
+      setMessage("Berhasil Mengubah Data");
+    } catch (error) {
+      setError("Gagal Mengubah Data");
+    }
+    setTimeout(() => {
+      setMessage(null);
+      setError(null)
+    }, 700);
+  }
+  const add = async () => {
+    const data = {
+      productName: baru.productName,
+      amount: baru.amount,
+      customerName: baru.customerName,
+      status: baru.product_status == "SUCCESS" ? 1 : 0 ,
+      transactionDate: baru.transactionDate,
+      createBy: baru.createBy ,
+      createOn: baru.createOn ,
+    }
+    try {
+      await axios.post(`http://localhost:3001/api`, {...data});
+      setMessage("Berhasil Menambah Data");
+    } catch (error) {
+      setError("Gagal Menambah Data");
+    }
+    setTimeout(() => {
+      setMessage(null);
+      setError(null)
+    }, 700);
+  }
+  const handleDelete = async(id) => {
+    try {
+      await axios.delete(`http://localhost:3001/api/${id}`);
+      const response = await axios.get('http://localhost:3001/api');
+        const { data } = await response.data
+        setData(data);
+      setMessage("Berhasil Mengahapus Data");
+      reload()
+    } catch (error) {
+      setError("Gagal Mengahapus Data");
+    }
+    setTimeout(() => {
+      setMessage(null);
+      setError(null)
+    }, 700);
+  }
+  useEffect(() => {
+    const fetchProvinceData = async () => {
+      try {
+        const response = await axios.get('http://localhost:3001/api');
+        const { data } = await response.data
+        setData(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchProvinceData();
+  }, []);
+  const rows = data.map((item) => (
+    <tr key={item.id}>
+      <td>{item.createOn?.split('T')[0]}</td>
+      <td>{item.productName}</td>
+      <td>{item.customerName}</td>
+      <td sx={{ padding: 0, }}>
+        <div style={{display:"flex"}}>
+        <div onClick={()=>handleDetail(item)}>
+        <Button radius="md" size="md" compact variant="outline"  onClick={open}>
+          Detail
+          </Button>
         </div>
-      </div>
+        <div onClick={()=>handleUpdate(item)}>
+        <Button radius="md" size="md" sx={{marginLeft:"5px", marginRight:"5px"}} color="yellow" compact variant="outline" onClick={open}>
+            update
+          </Button>
+        </div>
+          <div onClick={()=>handleDelete(item.id)}>
+        <Button radius="md" size="md" color="red" sx={{ marginRight:0}} compact variant="outline">
+            delete
+      </Button>
+          </div>
+          </div>
+        </td>
+    </tr>
+  ));
+  return (
+    <>
+    <Box sx={{ margin: "50px", }}>
+      <Title order={2} align="center" sx={{marginBottom:"20px"}}>List Data</Title>
+      <div onClick={handleadd} style={{marginLeft:"auto", marginBottom:"8px"}}>
+        <Button radius="md" size="md" compact variant="outline"  onClick={open}>
+          Tambah Data
+          </Button>
+        </div>
+        {message &&
+                <Notification icon={<IconCheck size="1.1rem" />} color="teal" title="Berhasil">
+                {message}
+              </Notification>
+      }
+        {error &&
+             <Notification icon={<IconX size="1.1rem" />} color="red">
+             uuups! {error}
+           </Notification>
+      }
+      <Table striped highlightOnHover withBorder withColumnBorders fontSize="md">
+      <thead>
+        <tr>
+          <th>Di Buat Pada</th>
+          <th>Nama Product</th>
+          <th>Nama Pembeli</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody>{rows}</tbody>
+    </Table>
+  </Box>
+      
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700/10 after:dark:from-sky-900 after:dark:via-[#0141ff]/40 before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`${inter.className} mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p
-            className={`${inter.className} m-0 max-w-[30ch] text-sm opacity-50`}
-          >
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`${inter.className} mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p
-            className={`${inter.className} m-0 max-w-[30ch] text-sm opacity-50`}
-          >
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`${inter.className} mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p
-            className={`${inter.className} m-0 max-w-[30ch] text-sm opacity-50`}
-          >
-            Discover and deploy boilerplate example Next.js&nbsp;projects.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`${inter.className} mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p
-            className={`${inter.className} m-0 max-w-[30ch] text-sm opacity-50`}
-          >
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+      <Modal opened={opened} onClose={close} title={title}>
+        <div onClose={()=> setDetail(null)}>
+          {title == "Detail Data" && 
+          <Card shadow="sm" padding="lg" radius="md" withBorder>
+          <Group position="apart" mt="md" mb="xs">
+                <Text weight={500}>{detail?.productName}</Text>
+            <Badge color="pink" variant="light">
+              {detail?.product_status?.name}
+            </Badge>
+          </Group>
+          <Box>
+          <Text size="sm" >
+            Nama Pembeli:   {detail?.customerName}
+                </Text>
+                <Text size="sm" >
+                Tanggal Pembelian:  {detail?.transactionDate?.split("T")[0]}
+            </Text>
+                <Text size="sm" >
+                Di Buat Oleh:  {detail?.createBy}
+            </Text>
+                <Text size="sm" >
+                Di Buat Pada:  {detail?.createOn?.split("T")[0]}
+            </Text>
+          </Box>
+        </Card>
+          }
+          {title == "Update Data" && 
+            <>
+            <form onSubmit={updat}>
+            <Input.Wrapper
+                  id="input-demo"
+                  withAsterisk
+              label="Status Pembayaran"
+              
+                >
+              <Input id="input-demo" placeholder="Status" value={baru?.product_status ||  detail?.product_status?.name} onChange={(e) => setBaru({ ...baru, product_status: e.target.value })} />
+                </Input.Wrapper>
+            <Input.Wrapper
+                  id="input-demo"
+                  withAsterisk
+              label="Nama Product"
+              
+                >
+                  <Input id="input-demo" placeholder="Malika" value={baru?.productName || detail?.productName} onChange={(e) => setBaru({ ...baru, productName: e.target.value })}/>
+                </Input.Wrapper>
+                <Input.Wrapper
+                  id="input-demo"
+                  withAsterisk
+              label="Nama Pembeli"
+              
+                >
+                  <Input id="input-demo" placeholder="mamati" value={baru?.customerName || detail?.customerName} onChange={(e) => setBaru({ ...baru, customerName: e.target.value })}/>
+                </Input.Wrapper>
+                <Input.Wrapper
+                  id="input-demo"
+                  withAsterisk
+                  label="Harga"
+              
+                >
+                  <Input id="input-demo" placeholder="mamati" value={baru?.amount || detail?.amount} onChange={(e) => setBaru({ ...baru, amount: e.target.value })}/>
+                </Input.Wrapper>
+                <Input.Wrapper
+                  id="input-demo"
+                  withAsterisk
+                  label="Tanggal Pembelian"
+              
+                >
+                  <Input id="input-demo" placeholder="26-10-2001" value={baru?.transactionDate || detail?.transactionDate?.split("T")[0]}
+              type="date" onChange={(e) => setBaru({ ...baru, transactionDate: e.target.value })}/>
+                </Input.Wrapper>
+                <Input.Wrapper
+                  id="input-demo"
+                  withAsterisk
+                  label="Di Buat Oleh"
+                  
+                >
+                  <Input id="input-demo" placeholder="suhe" value={baru?.createBy || detail?.createBy} onChange={(e) => setBaru({ ...baru, createBy: e.target.value })}/>
+                </Input.Wrapper>
+                <Input.Wrapper
+                  id="input-demo"
+                  withAsterisk
+                  label="Di Buat Pada"
+                  
+                >
+                  <Input id="input-demo" type="date" placeholder="05-10-2001" value={baru?.createOn || detail?.createOn?.split("T")[0]} onChange={(e) => setBaru({ ...baru, createOn: e.target.value })}/>
+              </Input.Wrapper>
+              <Button variant='outline' type='submit'>Ubah</Button>
+              </form>
+              </>
+          }
+        {title == "Tambah Data" && 
+            <>
+            <form onSubmit={add}>
+            <Input.Wrapper
+                  id="input-demo"
+                  withAsterisk
+              label="Status Pembayaran"
+              
+                >
+              <Input id="input-demo" placeholder="Status" onChange={(e) => setBaru({ ...baru, product_status: e.target.value })} />
+                </Input.Wrapper>
+            <Input.Wrapper
+                  id="input-demo"
+                  withAsterisk
+              label="Nama Product"
+              
+                >
+                  <Input id="input-demo" placeholder="Malika"  onChange={(e) => setBaru({ ...baru, productName: e.target.value })}/>
+                </Input.Wrapper>
+                <Input.Wrapper
+                  id="input-demo"
+                  withAsterisk
+              label="Nama Pembeli"
+              
+                >
+                  <Input id="input-demo" placeholder="mamati"  onChange={(e) => setBaru({ ...baru, customerName: e.target.value })}/>
+              </Input.Wrapper>
+              <Input.Wrapper
+                  id="input-demo"
+                  withAsterisk
+                  label="Harga"
+              
+                >
+                  <Input id="input-demo" placeholder="333"  onChange={(e) => setBaru({ ...baru, amount: e.target.value })}/>
+                </Input.Wrapper>
+                <Input.Wrapper
+                  id="input-demo"
+                  withAsterisk
+                  label="Tanggal Pembelian"
+              
+                >
+                  <Input id="input-demo" placeholder="26-10-2001" 
+              type="date" onChange={(e) => setBaru({ ...baru, transactionDate: e.target.value })}/>
+                </Input.Wrapper>
+                <Input.Wrapper
+                  id="input-demo"
+                  withAsterisk
+                  label="Di Buat Oleh"
+                  
+                >
+                  <Input id="input-demo" placeholder="suhe"  onChange={(e) => setBaru({ ...baru, createBy: e.target.value })}/>
+                </Input.Wrapper>
+                <Input.Wrapper
+                  id="input-demo"
+                  withAsterisk
+                  label="Di Buat Pada"
+                  
+                >
+                  <Input id="input-demo" type="date" placeholder="05-10-2001"  onChange={(e) => setBaru({ ...baru, createOn: e.target.value })}/>
+              </Input.Wrapper>
+                <Button variant='outline' type='submit'>Tambah</Button>
+              </form>
+              </>
+          }
+       </div>
+      </Modal>
+      </>
   )
 }
